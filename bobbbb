@@ -1,0 +1,62 @@
+#!/bin/bash
+
+nick="$(basename $0)"
+name="$nick $*"
+host="$1"
+port="$2"
+chan="#enigma-dev"
+
+if [ ! "$2" ]; then
+	echo "usage: $(basename $0) host port"
+	exit 1
+fi
+
+if ! exec 3<> /dev/tcp/$host/$port; then
+	echo "$(basename $0): unable to connect to $host:$port"
+	exit 1
+fi
+
+exec <&3 >&3-
+
+echo "USER $nick $nick $nick :$name"
+echo "NICK $nick"
+
+for c in $chan; do
+	echo "JOIN $c"
+done
+
+while read line; do
+	[[ "$line" =~ ^PING\ :(.*)$ ]] && echo "PONG :${BASH_REMATCH[1]}"
+	
+	if [[ "$line" =~ ^:([^\!]*)\!([^\ ]*)\ ([^\ ]*)\ ([^:]*)\ :(.*)$ ]]; then
+		sender=${BASH_REMATCH[1]}
+		server=${BASH_REMATCH[2]}
+		command=${BASH_REMATCH[3]}
+		args=(${BASH_REMATCH[4]})
+		contents=${BASH_REMATCH[5]}
+
+		case $command in
+		PRIVMSG)
+			if [[ ${args[0]} == $nick ]]; then
+				echo -n "* " >&2
+				echo "PRIVMSG $sender :hi"
+
+				if [[ $contents =~ ^quit ]]; then
+					echo "QUIT :asked to leave by $sender"
+					exit 0
+				fi
+			fi
+			echo "$sender: $contents" >&2
+			;;
+
+		KICK)
+			[[ ${args[1]} == $nick ]] && echo "JOIN ${args[0]}"
+			echo "PRIVMSG ${args[0]} :I love you too, $sender"
+			;;
+
+		PART)
+			[[ $sender == $nick ]] && echo "JOIN ${args[0]}"
+			;;
+		esac
+	fi
+done
