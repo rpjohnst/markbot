@@ -1,10 +1,9 @@
 #!/bin/bash
 
 nick="$(basename $0)"
-name="$nick $*"
 host="$1"
 port="$2"
-chan="#enigma-dev"
+chan="$3"
 
 if [ ! "$2" ]; then
 	echo "usage: $(basename $0) host port"
@@ -18,12 +17,9 @@ fi
 
 exec <&3 >&3-
 
-echo "USER $nick $nick $nick :$name"
+echo "USER $nick $nick $nick :$nick"
 echo "NICK $nick"
-
-for c in $chan; do
-	echo "JOIN $c"
-done
+echo "JOIN $chan"
 
 while read line; do
 	[[ "$line" =~ ^PING\ :(.*)$ ]] && echo "PONG :${BASH_REMATCH[1]}"
@@ -36,26 +32,14 @@ while read line; do
 		contents=${BASH_REMATCH[5]}
 
 		case $command in
+		KICK) [[ ${args[1]} == $nick ]] && echo "JOIN ${args[0]}"
+		PART) [[ $sender == $nick ]] && echo "JOIN ${args[0]}"
+
 		PRIVMSG)
-			if [[ ${args[0]} == $nick ]]; then
-				echo -n "* " >&2
-				echo "PRIVMSG $sender :hi"
-
-				if [[ $contents =~ ^quit ]]; then
-					echo "QUIT :asked to leave by $sender"
-					exit 0
-				fi
-			fi
-			echo "$sender: $contents" >&2
-			;;
-
-		KICK)
-			[[ ${args[1]} == $nick ]] && echo "JOIN ${args[0]}"
-			echo "PRIVMSG ${args[0]} :I love you too, $sender"
-			;;
-
-		PART)
-			[[ $sender == $nick ]] && echo "JOIN ${args[0]}"
+			[[ ${args[0]} == $nick ]] && echo "PRIVMSG $sender :hi"
+			[[ $contents =~ ^\!([^\ ]+)\ (.*) ]] && case ${BASH_REMATCH[1]} in
+				*) echo "I don't understand '${BASH_REMATCH[1]}'"
+			esac
 			;;
 		esac
 	fi
