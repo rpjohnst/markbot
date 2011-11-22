@@ -1,0 +1,46 @@
+#!/usr/bin/lua
+
+function words()
+	local text = io.read("*all")
+	local pos = 1
+	return function ()
+		local s, e = string.find(text, "%s-%S+", pos)
+		if s then
+			pos = e + 1
+			return string.sub(text, s, e)
+		else
+			return nil
+		end
+	end
+end
+
+function concat(...)
+	return table.concat({ ... }, "")
+end
+
+local state = {}
+function insert(index, value)
+	if not state[index] then
+		state[index] = {}
+	end
+	table.insert(state[index], value)
+end
+
+math.randomseed(os.time())
+math.random(); math.random(); math.random();
+
+local w1, w2 = "", ""
+for w in words() do
+	insert(concat(w1, w2), w)
+	w1 = w2; w2 = w;
+end
+
+w1, w2 = "", ""
+for i = 1, 50 do
+	local list = state[concat(w1, w2)]
+	local r = math.random(#list)
+	local w = list[r]
+	if w == "" then return end
+	io.write(w)
+	w1 = w2; w2 = w;
+end
