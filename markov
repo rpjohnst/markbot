@@ -1,5 +1,25 @@
 #!/usr/bin/lua
 
+-- parse cmd line args
+
+local depth, length = 2, 50
+
+local i = 1
+while i <= #arg do
+	if arg[i] == "-d" then
+		i = i + 1
+		depth = arg[i]
+	elseif arg[i] == "-n" then
+		i = i + 1
+		length = arg[i]
+	end
+	i = i + 1
+end
+
+-- build the graph
+
+local state = {}
+
 function words()
 	local text = io.read("*all")
 	local pos = 1
@@ -14,11 +34,6 @@ function words()
 	end
 end
 
-function concat(...)
-	return table.concat({ ... }, "")
-end
-
-local state = {}
 function insert(index, value)
 	if not state[index] then
 		state[index] = {}
@@ -26,21 +41,28 @@ function insert(index, value)
 	table.insert(state[index], value)
 end
 
-math.randomseed(os.time())
-math.random(); math.random(); math.random();
-
-local w1, w2 = "", ""
+local ws = {}
 for w in words() do
-	insert(concat(w1, w2), w)
-	w1 = w2; w2 = w;
+	local first = math.max(1, #ws - depth + 1)
+	insert(table.concat(ws, "", first), w)
+	table.insert(ws, w)
 end
 
-w1, w2 = "", ""
-for i = 1, 50 do
-	local list = state[concat(w1, w2)]
+-- generate the output
+
+math.randomseed(os.time())
+for i = 1, 5 do math.random() end
+
+ws = {}
+for i = 1, length do
+	local first = math.max(1, #ws - depth + 1)
+	local key = table.concat(ws, "", first)
+	local list = state[key]
 	local r = math.random(#list)
 	local w = list[r]
 	if w == "" then return end
 	io.write(w)
-	w1 = w2; w2 = w;
+	table.insert(ws, w)
 end
+
+print()
