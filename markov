@@ -57,7 +57,7 @@ ws = {}
 for i = 1, length do
 	local first = math.max(1, #ws - depth + 1)
 	local key = table.concat(ws, "", first)
-	local list = state[key]
+	local list = state[key] or { "" }
 	local r = math.random(#list)
 	local w = list[r]
 	if w == "" then return end
