@@ -8,10 +8,10 @@ local i = 1
 while i <= #arg do
 	if arg[i] == "-d" then
 		i = i + 1
-		depth = arg[i]
+		depth = tonumber(arg[i])
 	elseif arg[i] == "-n" then
 		i = i + 1
-		length = arg[i]
+		length = tonumber(arg[i])
 	end
 	i = i + 1
 end
@@ -23,8 +23,9 @@ local state = {}
 function words()
 	local text = io.read("*all")
 	local pos = 1
+
 	return function ()
-		local s, e = string.find(text, "%s-%S+", pos)
+		local s, e = string.find(text, "%S+%s*", pos)
 		if s then
 			pos = e + 1
 			return string.sub(text, s, e)
@@ -44,7 +45,8 @@ end
 local ws = {}
 for w in words() do
 	local first = math.max(1, #ws - depth + 1)
-	insert(table.concat(ws, "", first), w)
+	local key = table.concat(ws, "", first)
+	insert(key, w)
 	table.insert(ws, w)
 end
 
@@ -54,15 +56,16 @@ math.randomseed(os.time())
 for i = 1, 5 do math.random() end
 
 ws = {}
-for i = 1, length do
+for i = 1, length * 2 do
 	local first = math.max(1, #ws - depth + 1)
 	local key = table.concat(ws, "", first)
 	local list = state[key] or { "" }
 	local r = math.random(#list)
 	local w = list[r]
-	if w == "" then return end
-	io.write(w)
 	table.insert(ws, w)
+
+	if w == "" then break end
+	if i > length * 1 then io.write(w) end
 end
 
 print()
