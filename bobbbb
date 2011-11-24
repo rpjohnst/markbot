@@ -24,16 +24,25 @@ echo "JOIN $chan"
 while read line; do
 	[[ "$line" =~ ^PING\ :(.*)$ ]] && echo "PONG :${BASH_REMATCH[1]}"
 	
-	if [[ "$line" =~ ^:([^\!]*)\!([^\ ]*)\ ([^\ ]*)\ ([^:]*)\ :(.*)$ ]]; then
+	if [[ "$line" =~ ^:([^\!]*)\!([^\ ]*)\ ([^\ ]*)\ ([^:]*)(\ :(.*))?$ ]]; then
 		sender=${BASH_REMATCH[1]}
 		server=${BASH_REMATCH[2]}
 		command=${BASH_REMATCH[3]}
 		args=(${BASH_REMATCH[4]})
-		contents=${BASH_REMATCH[5]}
+		contents=${BASH_REMATCH[6]}
 
 		case $command in
 		KICK) [[ ${args[1]} == $nick ]] && echo "JOIN ${args[0]}" ;;
 		PART) [[ $sender == $nick ]] && echo "JOIN ${args[0]}" ;;
+		MODE)
+		# :JoshDreamland!~josh@d118-75-93-174.try.wideopenwest.com MODE #enigma-dev +b bobbbb!*@* 
+			if [[ "${args[1]}" == +b && "${args[2]}" =~ ^$nick ]]; then
+				nick="$(basename $0)$RANDOM"
+				echo "PART $chan"
+				echo "NICK $nick"
+				echo "JOIN $chan"
+			fi
+			;;
 
 		PRIVMSG)
 			[[ ${args[0]} == $chan ]] && echo "$contents" >> "logs/$sender"
