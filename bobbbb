@@ -51,10 +51,8 @@ while read line; do
 				case ${BASH_REMATCH[1]} in
 				mock)
 					name=${BASH_REMATCH[2]//[^-a-zA-Z0-9\[\]\\\`_^\{\}|]}
-					./markov -d 1 -n 20 < "logs/$name" | {
-						while read l; do echo "PRIVMSG $chan :$l"; done
-					}
-					echo "PRIVMSG $chan :    -- $name"
+					text=$(./markov -d 1 -n 20 < "logs/$name" | tr '\r\n' ' ')
+					echo "PRIVMSG $chan :\"$text\" -- $name"
 					;;
 				esac
 			fi
