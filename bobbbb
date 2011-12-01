@@ -36,11 +36,19 @@ while read line; do
 		PART) [[ $sender == $nick ]] && echo "JOIN ${args[0]}" ;;
 		MODE)
 		# :JoshDreamland!~josh@d118-75-93-174.try.wideopenwest.com MODE #enigma-dev +b bobbbb!*@* 
-			if [[ "${args[1]}" == +b && "${args[2]}" =~ ^$nick ]]; then
+			if [[ "${args[1]}" =~ ^\+[bq] && $nick =~ ${args[2]} ]]; then
 				nick="$(basename $0)$RANDOM"
-				echo "PART $chan"
+				echo "PART ${args[0]}"
 				echo "NICK $nick"
-				echo "JOIN $chan"
+				echo "JOIN ${args[0]}"
+			fi
+			;;
+		474)
+		# :leguin.freenode.net 474 bobbbb #enigma-dev :Cannot join channel (+b) - you are banned
+			if [[ $nick =~ ${args[0]} ]]; then
+				nick="$(basename $0)$RANDOM"
+				echo "NICK $nick"
+				echo "JOIN ${args[1]}"
 			fi
 			;;
 
