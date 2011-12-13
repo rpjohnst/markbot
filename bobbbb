@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 nick="$(basename $0)"
 host="$1"
 port="$2"
-chan="$3"
+chan="#$3"
 
-if [ ! "$2" ]; then
-	echo "usage: $(basename $0) host port"
+if [ ! "$3" ]; then
+	echo "usage: $(basename $0) host port chan"
 	exit 1
 fi
 
