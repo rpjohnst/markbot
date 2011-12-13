@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+nick="$(basename $0)"
+host="$1"
+port="$2"
+chan="#$3"
+
+if [ ! "$3" ]; then
+	echo "usage: $(basename $0) host port chan"
+	exit 1
+fi
+
+if ! exec 3<> /dev/tcp/$host/$port; then
+	echo "$(basename $0): unable to connect to $host:$port"
+	exit 1
+fi
+
+echo "USER $nick $nick $nick :$nick" >&3
+echo "NICK $nick" >&3
+echo "JOIN $chan" >&3
+
+while read -u 3 line; do
+	[[ "$line" =~ ^PING\ :(.*)$ ]] && echo "PONG :${BASH_REMATCH[1]}" >&3
+	echo "$line"
+done & cat >&3
