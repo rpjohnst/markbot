@@ -66,6 +66,23 @@ while read line; do
 						echo "PRIVMSG $chan :I've never heard of $name"
 					fi
 					;;
+
+				say)
+					echo "PRIVMSG $chan :${BASH_REMATCH[2]}"
+					;;
+				msg)
+					cmdargs=(${BASH_REMATCH[2]})
+					echo "PRIVMSG ${cmdargs[0]} :${cmdargs[*]//${cmdargs[0]}}"
+					;;
+				me)
+					# :0:-1 is to deal with the extra \n at the end
+					echo "PRIVMSG $chan :ACTION ${BASH_REMATCH[2]:0:-1}"
+					;;
+
+				nick)
+					nick=${BASH_REMATCH[2]//[^-a-zA-Z0-9\[\]\\\`_^\{\}|]}
+					echo "NICK $nick"
+					;;
 				esac
 			fi
 			;;
