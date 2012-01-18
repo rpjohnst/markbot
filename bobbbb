@@ -29,7 +29,7 @@ while read line; do
 		server=${BASH_REMATCH[1]#*\!}
 		command=${BASH_REMATCH[2]}
 		args=(${BASH_REMATCH[3]})
-		contents=${BASH_REMATCH[5]}
+		contents=${BASH_REMATCH[5]%?}
 
 		case $command in
 		KICK) [[ ${args[1]} == $nick ]] && echo "JOIN ${args[0]}" ;;
@@ -80,7 +80,7 @@ while read line; do
 					echo "PRIVMSG ${cmdargs%%\ *} :${cmdargs#*\ }"
 					;;
 				me)
-					echo "PRIVMSG $chan :ACTION ${cmdargs:0:-1}"
+					echo "PRIVMSG $chan :ACTION ${cmdargs}"
 					;;
 
 				nick)
