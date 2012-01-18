@@ -24,41 +24,47 @@ echo "JOIN $chan"
 while read line; do
 	[[ "$line" =~ ^PING\ :(.*)$ ]] && echo "PONG :${BASH_REMATCH[1]}"
 	
-	if [[ "$line" =~ ^:([^\!]*)\!([^\ ]*)\ ([^\ ]*)\ ([^:]*)(\ :(.*))?$ ]]; then
-		sender=${BASH_REMATCH[1]}
-		server=${BASH_REMATCH[2]}
-		command=${BASH_REMATCH[3]}
-		args=(${BASH_REMATCH[4]})
-		contents=${BASH_REMATCH[6]}
+	if [[ "$line" =~ ^:([^ ]*)\ ([^\ ]*)\ ([^:]*)(\ :(.*))?$ ]]; then
+		sender=${BASH_REMATCH[1]%\!*}
+		server=${BASH_REMATCH[1]#*\!}
+		command=${BASH_REMATCH[2]}
+		args=(${BASH_REMATCH[3]})
+		contents=${BASH_REMATCH[5]}
 
 		case $command in
 		KICK) [[ ${args[1]} == $nick ]] && echo "JOIN ${args[0]}" ;;
 		PART) [[ $sender == $nick ]] && echo "JOIN ${args[0]}" ;;
 		MODE)
 		# :JoshDreamland!~josh@d118-75-93-174.try.wideopenwest.com MODE #enigma-dev +b bobbbb!*@* 
-			if [[ "${args[1]}" =~ ^\+[bq] && $nick =~ ${args[2]} ]]; then
+			if [[ "${args[1]}" =~ ^\+[bq] && $nick =~ ${args[2]%\!*} ]]; then
 				nick="$(basename $0)$RANDOM"
 				echo "PART ${args[0]}"
 				echo "NICK $nick"
 				echo "JOIN ${args[0]}"
 			fi
+
+			# todo: fix the holes here
+			#elif [[ "${args[1]}" =~ ^\-[bq] && $(basename $0) =~ ${args[2]%\!*} ]]; then
+			#	nick="$(basename $0)"
+			#	echo "NICK $nick"
 			;;
 		474)
 		# :leguin.freenode.net 474 bobbbb #enigma-dev :Cannot join channel (+b) - you are banned
-			if [[ $nick =~ ${args[0]} ]]; then
-				nick="$(basename $0)$RANDOM"
-				echo "NICK $nick"
-				echo "JOIN ${args[1]}"
-			fi
+			nick="$(basename $0)$RANDOM"
+			echo "NICK $nick"
+			echo "JOIN ${args[1]}"
 			;;
 
 		PRIVMSG)
 			[[ ${args[0]} == $chan ]] && echo "$contents" >> "logs/$sender"
 
-			if [[ $contents =~ ^\!([^\ ]+)\ (.*) ]]; then
-				case ${BASH_REMATCH[1]} in
+			if [[ "$contents" =~ ^\!(.*) ]]; then
+				cmd=${BASH_REMATCH[1]%%\ *}
+				cmdargs=${BASH_REMATCH[1]#*\ }
+
+				case $cmd in
 				mock)
-					name=${BASH_REMATCH[2]//[^-a-zA-Z0-9\[\]\\\`_^\{\}|]}
+					name=${cmdargs//[^-a-zA-Z0-9\[\]\\\`_^\{\}|]}
 					if [ -e "logs/$name" ]; then
 						text=$(./markov -d 1 -n 20 < "logs/$name" | tr '\r\n' ' ' | tr -s ' ')
 						echo "PRIVMSG $chan :\"$text\" -- $name"
@@ -68,19 +74,17 @@ while read line; do
 					;;
 
 				say)
-					echo "PRIVMSG $chan :${BASH_REMATCH[2]}"
+					echo "PRIVMSG $chan :${cmdargs}"
 					;;
 				msg)
-					cmdargs=(${BASH_REMATCH[2]})
-					echo "PRIVMSG ${cmdargs[0]} :${cmdargs[*]//${cmdargs[0]}}"
+					echo "PRIVMSG ${cmdargs%%\ *} :${cmdargs#*\ }"
 					;;
 				me)
-					# :0:-1 is to deal with the extra \n at the end
-					echo "PRIVMSG $chan :ACTION ${BASH_REMATCH[2]:0:-1}"
+					echo "PRIVMSG $chan :ACTION ${cmdargs:0:-1}"
 					;;
 
 				nick)
-					nick=${BASH_REMATCH[2]//[^-a-zA-Z0-9\[\]\\\`_^\{\}|]}
+					nick=${cmdargs//[^-a-zA-Z0-9\[\]\\\`_^\{\}|]}
 					echo "NICK $nick"
 					;;
 				esac
